@@ -9,7 +9,7 @@
 #include "../prj/SingleGenome/include/SingleGenomeController.h"
 #include "../prj/TemplateMoving/include/TemplateMovingController.h"
 
-
+#include <algorithm>
 
 #include <iomanip>
 
@@ -26,7 +26,10 @@ void MovingObject::move() {
     if (_impulses.size() > 0)
     {
         //       printf("[DEBUG] Moving object %d\n", _id);
-        double impXtot = 0, impYtot = 0, vr, vtheta, vx, vy, ux, uy;
+        double impXtot = 0, impYtot = 0;
+        double vr = 0, vtheta = 0;
+        double vx = 0, vy = 0;
+        double ux = 0, uy = 0;
         
         for (auto& imp : _impulses) {
             // We only want the component of the speed normal to the centers of mass
@@ -53,7 +56,9 @@ void MovingObject::move() {
             double impY = (vx*ux+vy*uy)*uy/sqnorm;
             impXtot += impX;
             impYtot += impY;
-            _efforts.insert(std::pair<int, double>(imp.first, vr)); // vr is here in fact the cooperation level (and vtheta as well)
+            // effort is a linear function of the distance to the center
+            double effort = std::max((1.0-(sqrt(sqnorm))/_footprintRadius)*2.0, 0.0);
+            _efforts.insert(std::pair<int, double>(imp.first, effort));
         }
         
         _desiredLinearSpeed = sqrt(impXtot*impXtot + impYtot*impYtot);
@@ -116,7 +121,7 @@ void MovingObject::step()
     for (auto eff: _efforts)
 	{
         totalEffort += eff.second;
-	}
+    }
 
     for (auto robotID: _nearbyRobots)
     {
@@ -234,12 +239,10 @@ void MovingObject::show() {
 }
 
 // Here, the robot ID has the gRobotStartOffset added because we might be pushed by either robots or other objects
+// In this experiment, pushing an object has no specific effect and we rely only on being in the footprint
 void MovingObject::isPushed( int __idAgent, std::tuple<double, double> __speed )
 {
-    if (_impulses.count(__idAgent) == 0) {
-        _impulses.insert(std::pair<int, std::tuple<double, double>>(__idAgent, __speed));
-        _nearbyRobots.insert(__idAgent-gRobotIndexStartOffset);
-    }
+    
 }
 
 void MovingObject::isTouched( int __idAgent )
@@ -249,5 +252,8 @@ void MovingObject::isTouched( int __idAgent )
 
 void MovingObject::isWalked( int __idAgent )
 {
-//    _nearbyRobots.insert(__idAgent);
+    _nearbyRobots.insert(__idAgent);
+    if (_impulses.count(__idAgent+gRobotIndexStartOffset) == 0) {
+        _impulses.insert(std::pair<int, std::tuple<double, double>>(__idAgent+gRobotIndexStartOffset, std::tuple<double, double>(0.0, 0.0)));
+    }
 }
