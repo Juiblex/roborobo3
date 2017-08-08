@@ -182,9 +182,7 @@ std::vector<double> MonoRobotController::getInputs()
                 inputs.push_back(0); // not a robot
                 inputs.push_back(0); // not a wall
                 inputs.push_back(1); // an object
-                inputs.push_back(obj->getNbNearbyRobots()); // some other robots around
-                printf("Robot %d (it %d) NN: seeing %d robots on object %d from sensor %d\n", _wm->getId(), gWorld->getIterations(), obj->getNbNearbyRobots(), obj->getId(), i);
-
+                inputs.push_back(obj->getNbNearbyRobots()+1); // some other robots around (+ the fake robot, specific)
             }
             else // found nothing
             {
@@ -229,7 +227,7 @@ std::vector<double> MonoRobotController::getInputs()
     }
     inputs.push_back(avgEffort);
     
-    printf("Robot %d (it %d) NN: nbNearby %d, avgTotalEffort %lf, avgEffort %lf\n", _wm->getId(), gWorld->getIterations(), _nbNearbyRobots, avgTotalEffort, avgEffort);
+//    printf("Robot %d (it %d) NN: nbNearby %d, avgTotalEffort %lf, avgEffort %lf\n", _wm->getId(), gWorld->getIterations(), _nbNearbyRobots, avgTotalEffort, avgEffort);
     
     return inputs;
 }
@@ -477,20 +475,21 @@ void MonoRobotController::increaseFitness( double __delta )
 void MonoRobotController::wasNearObject( int __objectId, bool __objectDidMove, double __totalEffort, double __effort, int __nbRobots )
 {
     
-    _isNearObject = true;
-    _nearbyObjectId = __objectId;
-    
     // Experiment-specific: 1 fake robot that contributes 0.25*(objectID%8)
     __nbRobots += 1;
     __totalEffort += 0.25*((double)(__objectId%8));
     
-    printf("[DEBUG] Robot %d was near object %d, own effort %lf, total effort %lf, with %d total robots around\n", _wm->getId(), __objectId, __effort, __totalEffort, __nbRobots);
+//    printf("[DEBUG] Robot %d was near object %d, own effort %lf, total effort %lf, with %d total robots around\n", _wm->getId(), __objectId, __effort, __totalEffort, __nbRobots);
+    
+    _isNearObject = true;
+    _nearbyObjectId = __objectId;
+    _nbNearbyRobots = __nbRobots;
     
     double coeff = MonoRobotSharedData::gConstantK/(1.0+pow(__nbRobots-2, 2)); // \frac{k}{1+(n-2)^2}
     double payoff = coeff * pow(__totalEffort, MonoRobotSharedData::gConstantA) - __effort;
     
     if (__objectDidMove || (gStuckMovableObjects)) {
-        printf("[DEBUG] Robot %d (it %d): effort %lf, payoff %lf\n", _wm->getId(), gWorld->getIterations()%1000, __effort, payoff);
+ //       printf("[DEBUG] Robot %d (it %d): effort %lf, payoff %lf\n", _wm->getId(), gWorld->getIterations()%1000, __effort, payoff);
         increaseFitness(payoff);
         _efforts.push_back(__effort);
         if (_efforts.size() >= MonoRobotSharedData::gMemorySize)
