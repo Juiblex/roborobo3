@@ -489,7 +489,13 @@ void MonoRobotController::wasNearObject( int __objectId, bool __objectDidMove, d
     double payoff = coeff * pow(__totalEffort, MonoRobotSharedData::gConstantA) - __effort;
     
     if (__objectDidMove || (gStuckMovableObjects)) {
- //       printf("[DEBUG] Robot %d (it %d): effort %lf, payoff %lf\n", _wm->getId(), gWorld->getIterations()%1000, __effort, payoff);
+        MonoRobotWorldObserver *wobs = static_cast<MonoRobotWorldObserver *>(gWorld->getWorldObserver());
+        if (wobs->isActive(__objectId))
+            payoff = __effort = __totalEffort = 1; // We need that to tell the NN we pushed
+        else
+            payoff = __effort = __totalEffort = 0;
+//      printf("[DEBUG] Robot %d (it %d): effort %lf, payoff %lf\n", _wm->getId(), gWorld->getIterations()%1000, __effort, payoff);
+
         increaseFitness(payoff);
         _efforts.push_back(__effort);
         if (_efforts.size() >= MonoRobotSharedData::gMemorySize)

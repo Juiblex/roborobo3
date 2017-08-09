@@ -27,6 +27,8 @@ protected:
     int _evaluationCount;
     int _evaluationItCount;
     
+    int _activeObjects[2];
+    
     LogManager *_statsLogManager; // Our own little logfile
     LogManager *_genomeLogManager;
     LogManager *_effortLogManager; // log effort values for each iteration and each robot so we can see if they converge to the ESS
@@ -42,6 +44,8 @@ public:
     void stepEvaluation( bool __newGeneration );
     void resetObjects(); // reset which objects are active, etc.
     void resetLandmarks();
+    
+    bool isActive( int __objectId );
     
     virtual int getGenerationItCount() { return _evaluationItCount; }
     
