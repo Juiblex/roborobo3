@@ -212,7 +212,6 @@ std::vector<double> MonoRobotController::getInputs()
             // the average total effort over the last gMemorySize (at most) turns we were on the object
             for (auto totEff: _totalEfforts)
                 avgTotalEffort += totEff;
-            avgTotalEffort /= (double) _totalEfforts.size();
         }
         inputs.push_back(avgTotalEffort);
     }
@@ -223,7 +222,6 @@ std::vector<double> MonoRobotController::getInputs()
     {
         for (auto eff: _efforts)
             avgEffort += eff;
-        avgEffort /= (double) _efforts.size();
     }
     inputs.push_back(avgEffort);
     
